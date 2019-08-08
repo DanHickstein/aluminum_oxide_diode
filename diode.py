@@ -9,11 +9,11 @@ def main():
     fig, axs = plt.subplots(2, 1, figsize=(10,8), dpi=100, tight_layout=True)
     
     wl, responsivity, uncertainty, uncertainty_percent = get_nist_data()
-    new_wls = np.linspace(np.min(wl)-5, np.max(wl)+5, 1000)
+    new_wls = np.linspace(np.min(wl)-1, np.max(wl)+1, 1000)
     new_respon = interpolated_responsivity(new_wls)
     
     for ax in axs:
-        ax.errorbar(wl, responsivity, uncertainty, marker='o', label='NIST measured data')
+        ax.errorbar(wl, responsivity, uncertainty, marker='o', ms=4, label='NIST measured data')
         ax.plot(new_wls, new_respon, label='Spline fit')
         
         ax.grid(alpha=0.2)
@@ -21,8 +21,10 @@ def main():
         ax.set_xlabel('Wavelength (nm)')
         ax.set_ylabel('Responsivity (mA/W)')
     
+    axs[0].legend()
 
     axs[1].set_yscale('log')
+    plt.savefig('Diode responsivity.png', dpi=200)
     plt.show()
 
 
