@@ -7,23 +7,32 @@ import warnings
 
 def main():
     fig, axs = plt.subplots(2, 1, figsize=(10,8), dpi=100, tight_layout=True)
-    
+
     wl, responsivity, uncertainty, uncertainty_percent = get_nist_data()
-    new_wls = np.linspace(np.min(wl)-1, np.max(wl)+1, 1000)
+    new_wls = np.linspace(np.min(wl), np.max(wl), 1000)
     new_respon = interpolated_responsivity(new_wls)
-    
+
     for ax in axs:
         ax.errorbar(wl, responsivity, uncertainty, marker='o', ms=4, label='NIST measured data')
         ax.plot(new_wls, new_respon, label='Spline fit')
-        
+
         ax.grid(alpha=0.2)
         ax.grid(alpha=0.1, which='minor')
         ax.set_xlabel('Wavelength (nm)')
-        ax.set_ylabel('Responsivity (mA/W)')
-    
-    axs[0].legend()
+        ax.set_ylabel('Responsivity (A/W)')
 
+    axs[0].legend()
+    axs[0].set_title('Calibration for NIST aluminum oxide diode SN 448, calibrated July 17, 2019')
     axs[1].set_yscale('log')
+
+    fund = 1035.0
+    for h in [5,6,7,8,9,10]:
+        hwl = fund/h
+        resp = interpolated_responsivity(hwl)
+        axs[1].plot(hwl, resp, 'o', color='r')
+        axs[1].annotate('H%i, %.1f nm: %.2e A/W'%(h, hwl, resp), xy=(hwl, resp), xytext=(5,5), textcoords='offset points', ha='left', fontsize=8, color='r')
+
+
     plt.savefig('Diode responsivity.png', dpi=200)
     plt.show()
 
@@ -84,20 +93,19 @@ def get_nist_data():
 
     # Wavelength is in nm, responsivity and uncertainty are in mA/W.
     wl, responsivity, uncertainty, uncertainty_percent = np.loadtxt(StringIO(data_from_nist), unpack=True, skiprows=1)
-    
-    return wl, responsivity, uncertainty, uncertainty_percent
+    return wl, responsivity*1e-3, uncertainty*1e-3, uncertainty_percent
 
 wl, responsivity, uncertainty, uncertainty_percent = get_nist_data()
-interp = scipy.interpolate.UnivariateSpline(wl, responsivity, s=len(wl)*5e-4)
+interp = scipy.interpolate.UnivariateSpline(wl, responsivity, s=len(wl)*5e-12)
 
 
 def interpolated_responsivity(wavelength):
-    if np.any(wavelength>np.max(wl)) or (wavelength<np.min(wl)):
+    if np.any(wavelength>np.max(wl)) or np.any(wavelength<np.min(wl)):
         warnings.warn("Warning: you are requesting values outside of the data range. Exterpolation will be attempted, but the results might not be good.")
 
     respon = interp(wavelength)
     return respon
-    
+
 
 
 
